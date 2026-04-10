@@ -6,6 +6,10 @@ class Settings(BaseSettings):
     APP_NAME: str = "Advanced RAG Backend"
     DEBUG: bool = True
 
+    # Ollama Settings
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_MODEL: str = "llama3:8b-instruct-q4_0"
+
     # API Keys
     OPENAI_API_KEY: Optional[str] = None
     ANTHROPIC_API_KEY: Optional[str] = None
