@@ -61,14 +61,37 @@ pip install -r requirements.txt
 ### 3. Configuration
 Configure the `.env` file with appropriate API keys and model identifiers. The system is designed to be model-agnostic at the generation layer.
 
-## Operational Workflow
+## Detailed Pipeline Walkthrough
 
-### Retrieval Pipeline
-The central orchestration is handled by the `RetrievalPipeline` class, which executes a non-linear search strategy:
-1. **Parallel Search**: Executes a concurrent dense semantic search and sparse keyword search in Qdrant.
-2. **Database-Level Fusion**: Utilizes RRF to normalize and combine disparate score distributions.
-3. **Contextual Reranking**: Passes the top fusion results (default k=20) through a Cross-Encoder to verify relevance against the original query.
-4. **Selection**: Returns the top refined results (default k=5) for downstream generation.
+The system processes queries through four distinct technical phases:
+
+```mermaid
+graph TD
+    A[User Query] --> B(Query Rewriter - Llama 3)
+    B --> C{Hybrid Search}
+    C --> D[Dense Search - BGE]
+    C --> E[Sparse Search - BM25]
+    D --> F[Reciprocal Rank Fusion - RRF]
+    E --> F
+    F --> G[Top 20 Candidates]
+    G --> H(Cross-Encoder Reranker - BGE)
+    H --> I[Top 5 Refined Context]
+    I --> J(Generator - Llama 3)
+    J --> K[Final Answer + Sources]
+```
+
+### 1. The Ingestion Phase (Preparation)
+Documents (PDFs/TXTs) are parsed and split into 500-character chunks with a 50-character overlap. Each chunk is vectorized using **BGE Embeddings** to generate both dense (semantic) and sparse (keyword) vectors, which are then stored in **Qdrant**.
+
+### 2. The Retrieval Phase (Searching)
+The user's query is first expanded by **Llama 3** (Query Rewriting) to optimize it for vector search. The system then executes a **Parallel Hybrid Search** in Qdrant, combining semantic results (Dense) and exact keyword matches (BM25) using **Reciprocal Rank Fusion (RRF)**.
+
+### 3. The Refinement Phase (Reranking)
+To eliminate noise, the top 20 candidate documents are re-scored by a **Cross-Encoder Model** (BAAI/bge-reranker-base). This second-stage scoring ensures that only the most contextually relevant information is passed to the LLM.
+
+### 4. The Generation Phase (Answering)
+The top 5 refined results are injected into a specialized prompt alongside the original user query. **Llama 3** (via local Ollama) processes this context to generate a factual, hallucination-free response with cited sources.
+
 
 ## Performance Optimization
 
