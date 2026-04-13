@@ -81,16 +81,21 @@ graph TD
 ```
 
 ### 1. The Ingestion Phase (Preparation)
-Documents (PDFs/TXTs) are parsed and split into 500-character chunks with a 50-character overlap. Each chunk is vectorized using **BGE Embeddings** to generate both dense (semantic) and sparse (keyword) vectors, which are then stored in **Qdrant**.
+*   **Tech used:** `LangChain` (Loader), `RecursiveCharacterSplitter`, `FastEmbed` (Vectorization), `Qdrant` (Storage).
+*   **Process:** Documents (PDFs/TXTs) are parsed and split into 500-character chunks with a 50-character overlap. Each chunk is vectorized using **BGE Embeddings** to generate both dense (semantic) and sparse (keyword) vectors, which are then stored in **Qdrant**.
 
 ### 2. The Retrieval Phase (Searching)
-The user's query is first expanded by **Llama 3** (Query Rewriting) to optimize it for vector search. The system then executes a **Parallel Hybrid Search** in Qdrant, combining semantic results (Dense) and exact keyword matches (BM25) using **Reciprocal Rank Fusion (RRF)**.
+*   **Tech used:** `Ollama` (Llama 3 Rewriter), `FastEmbed` (BGE + BM25), `Qdrant` (Search Engine).
+*   **Process:** The user's query is first expanded by **Llama 3** (Query Rewriting) to optimize it for vector search. The system then executes a **Parallel Hybrid Search** in Qdrant, combining semantic results (Dense) and exact keyword matches (BM25) using **Reciprocal Rank Fusion (RRF)**.
 
 ### 3. The Refinement Phase (Reranking)
-To eliminate noise, the top 20 candidate documents are re-scored by a **Cross-Encoder Model** (BAAI/bge-reranker-base). This second-stage scoring ensures that only the most contextually relevant information is passed to the LLM.
+*   **Tech used:** `Sentence-Transformers`, `BAAI/bge-reranker-base` (Cross-Encoder).
+*   **Process:** To eliminate noise, the top 20 candidate documents are re-scored by a **Cross-Encoder Model**. This second-stage scoring ensures that only the most contextually relevant information is passed to the LLM.
 
 ### 4. The Generation Phase (Answering)
-The top 5 refined results are injected into a specialized prompt alongside the original user query. **Llama 3** (via local Ollama) processes this context to generate a factual, hallucination-free response with cited sources.
+*   **Tech used:** `Ollama` (Llama 3 Inference), `FastAPI` (Orchestration).
+*   **Process:** The top 5 refined results are injected into a specialized prompt alongside the original user query. **Llama 3** processes this context to generate a factual, hallucination-free response with cited sources.
+
 
 
 ## Performance Optimization
