@@ -96,6 +96,21 @@ graph TD
 *   **Tech used:** `Ollama` (Llama 3 Inference), `FastAPI` (Orchestration).
 *   **Process:** The top 5 refined results are injected into a specialized prompt alongside the original user query. **Llama 3** processes this context to generate a factual, hallucination-free response with cited sources.
 
+### Technology & Role Mapping
+
+| Technology | Role | Specific Task |
+| :--- | :--- | :--- |
+| **Llama 3 (Ollama)** | Search Architect | Rephrases messy user queries into search-optimized terms. |
+| **Llama 3 (Ollama)** | Generator | Writes the final human-readable answer based on provided context. |
+| **BGE Embedding** | Concept Translator | Converts text into mathematical vectors for semantic concept matching. |
+| **BM25 (Sparse)** | Keyword Expert | Finds exact matches for names, technical codes, and specific terms. |
+| **BGE Cross-Encoder** | Quality Judge | Reranks candidates to ensure only the most relevant context is used. |
+| **Qdrant** | Knowledge Vault | Stores vectors and handles high-speed hybrid search logic. |
+| **FastEmbed** | Inference Engine | Optimizes CPU performance for embedding and search operations. |
+| **LangChain** | Document Carpenter | Manages PDF loading and splits text into manageable chunks. |
+| **FastAPI** | System Interface | Manages the API endpoints and coordinates the async pipeline flow. |
+
+
 
 
 ## Performance Optimization
