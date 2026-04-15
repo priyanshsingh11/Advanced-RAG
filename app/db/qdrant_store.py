@@ -57,27 +57,43 @@ class QdrantStore:
                 batch_idx = i // batch_size + 1
                 batch_chunks = chunks[i : i + batch_size]
                 
-                # SANITIZATION: Filter out chunks with missing or invalid content
+                # SANITIZATION: Aggressive cleaning of text content
                 valid_batch_chunks = []
                 for chunk in batch_chunks:
-                    content = getattr(chunk, 'page_content', "")
-                    if isinstance(content, str) and content.strip():
-                        valid_batch_chunks.append(chunk)
-                    else:
-                        logger.warning(f"Skipping invalid/empty chunk in batch {batch_idx}")
+                    try:
+                        content = getattr(chunk, 'page_content', "")
+                        if content is None:
+                            continue
+                        
+                        # Force string, strip whitespace, and normalize UTF-8 (removes null bytes/broken chars)
+                        clean_content = str(content).encode("utf-8", "ignore").decode("utf-8").strip()
+                        
+                        if clean_content:
+                            chunk.page_content = clean_content
+                            valid_batch_chunks.append(chunk)
+                    except Exception as e:
+                        logger.warning(f"Failed to sanitize a chunk in batch {batch_idx}: {e}")
                 
                 if not valid_batch_chunks:
-                    logger.warning(f"Batch {batch_idx} contained no valid chunks. Skipping.")
+                    logger.warning(f"Batch {batch_idx} contained no valid chunks after sanitization. Skipping.")
                     continue
 
                 texts = [chunk.page_content for chunk in valid_batch_chunks]
                 metadatas = [chunk.metadata for chunk in valid_batch_chunks]
                 
-                logger.info(f"Processing batch {batch_idx}/{total_batches} ({len(valid_batch_chunks)} valid chunks)...")
+                logger.info(f"Processing batch {batch_idx}/{total_batches} ({len(valid_batch_chunks)} sanitized chunks)...")
                 
-                # Generate Embeddings for current batch
-                dense_vectors = list(self.dense_model.embed(texts))
-                sparse_vectors = list(self.sparse_model.embed(texts))
+                try:
+                    # Generate Embeddings for current batch
+                    dense_vectors = list(self.dense_model.embed(texts))
+                    sparse_vectors = list(self.sparse_model.embed(texts))
+                except Exception as e:
+                    logger.error(f"EMBEDDING ERROR in Batch {batch_idx}: {e}")
+                    # FORENSICS: Print first few characters of each text in the failing batch
+                    for idx, t in enumerate(texts):
+                        preview = (t[:100] + '...') if len(t) > 100 else t
+                        logger.error(f"  Chunk {idx} (len={len(t)}): {preview!r}")
+                    raise e # Re-raise to stop and let user see the forensic logs
                 
                 points = []
                 for j, (text, meta, dense, sparse) in enumerate(zip(texts, metadatas, dense_vectors, sparse_vectors)):
