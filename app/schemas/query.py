@@ -11,6 +11,21 @@ class QueryResponse(BaseModel):
     confidence: float
     metadata: Optional[Dict[str, Any]] = None
 
+class BenchmarkResult(BaseModel):
+    model_name: str
+    provider: str
+    answer: str
+    time_taken: float  # in seconds
+    input_tokens: int
+    output_tokens: int
+    total_tokens: int
+    confidence: float
+
+class ComparisonResponse(BaseModel):
+    query: str
+    results: List[BenchmarkResult]
+    metadata: Optional[Dict[str, Any]] = None
+
 class IngestResponse(BaseModel):
     message: str
     status: str

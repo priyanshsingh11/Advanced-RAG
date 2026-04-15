@@ -54,3 +54,46 @@ class RAGOrchestrator:
                 "sources": [],
                 "confidence": 0.0
             }
+
+    def compare(self, user_query: str) -> Dict[str, Any]:
+        """Runs the RAG pipeline and compares multiple LLM backends."""
+        try:
+            logger.info(f"Starting model comparison for query: {user_query}")
+            
+            # 1. Processing (Same for all models)
+            rewritten_query = self.rewriter.rewrite(user_query)
+            retrieved_docs = self.retriever.retrieve(rewritten_query, top_k=settings.TOP_K_RETRIEVAL)
+            
+            if not retrieved_docs:
+                return {"query": user_query, "results": [], "metadata": {"error": "No context found"}}
+            
+            reranked_docs = self.reranker.rerank(rewritten_query, retrieved_docs, top_k=settings.TOP_K_RERANK)
+
+            # 2. Benchmarking (Parallel-ish or Sequential)
+            results = []
+            
+            # Ollama Models
+            ollama_models = [m.strip() for m in settings.OLLAMA_MODELS.split(",")]
+            for model in ollama_models:
+                res = self.generator.generate_with_benchmark(user_query, reranked_docs, model, "ollama")
+                results.append(res)
+            
+            # Groq Model
+            if settings.GROQ_API_KEY:
+                res = self.generator.generate_with_benchmark(user_query, reranked_docs, settings.GROQ_MODEL, "groq")
+                results.append(res)
+            else:
+                logger.warning("GROQ_API_KEY not found, skipping Groq comparison.")
+
+            return {
+                "query": user_query,
+                "results": results,
+                "metadata": {
+                    "rewritten_query": rewritten_query,
+                    "docs_retrieved": len(retrieved_docs)
+                }
+            }
+
+        except Exception as e:
+            logger.error(f"Error in RAGOrchestrator Comparison: {e}")
+            raise e

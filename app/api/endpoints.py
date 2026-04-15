@@ -14,6 +14,8 @@ orchestrator = RAGOrchestrator()
 loader = DocumentLoader()
 store = QdrantStore()
 
+from app.schemas.query import QueryRequest, QueryResponse, IngestResponse, ComparisonResponse
+
 @router.post("/query", response_model=QueryResponse)
 async def query_rag(request: QueryRequest):
     """Executes a RAG query using the modular pipeline."""
@@ -24,6 +26,16 @@ async def query_rag(request: QueryRequest):
         return QueryResponse(**result)
     except Exception as e:
         logger.error(f"Error processing query: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/compare", response_model=ComparisonResponse)
+async def compare_models(request: QueryRequest):
+    """Executes a RAG query and compares multiple LLMs."""
+    try:
+        result = orchestrator.compare(request.query)
+        return ComparisonResponse(**result)
+    except Exception as e:
+        logger.error(f"Error comparing models: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/ingest", response_model=IngestResponse)
