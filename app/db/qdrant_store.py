@@ -45,44 +45,72 @@ class QdrantStore:
         except Exception as e:
             logger.error(f"Error initializing Qdrant collection: {e}")
 
-    def upsert_documents(self, chunks: List[Any]):
-        """Embeds and uploads chunks to Qdrant."""
+    def upsert_documents(self, chunks: List[Any], batch_size: int = 500):
+        """Embeds and uploads chunks to Qdrant in batches to optimize memory usage."""
         try:
-            texts = [chunk.page_content for chunk in chunks]
-            metadatas = [chunk.metadata for chunk in chunks]
+            total_chunks = len(chunks)
+            total_batches = (total_chunks + batch_size - 1) // batch_size
             
-            # Generate Embeddings
-            dense_vectors = list(self.dense_model.embed(texts))
-            sparse_vectors = list(self.sparse_model.embed(texts))
-            
-            points = []
-            for i, (text, meta, dense, sparse) in enumerate(zip(texts, metadatas, dense_vectors, sparse_vectors)):
-                points.append(
-                    models.PointStruct(
-                        id=hash(text) % (10**15), # Simple persistent ID
-                        vector={
-                            "dense": dense.tolist(),
-                            "sparse": models.SparseVector(
-                                indices=sparse.indices.tolist(),
-                                values=sparse.values.tolist()
-                            )
-                        },
-                        payload={
-                            "text": text,
-                            "metadata": meta
-                        }
+            logger.info(f"Starting ingestion of {total_chunks} chunks in {total_batches} batches.")
+
+            for i in range(0, total_chunks, batch_size):
+                batch_idx = i // batch_size + 1
+                batch_chunks = chunks[i : i + batch_size]
+                
+                # SANITIZATION: Filter out chunks with missing or invalid content
+                valid_batch_chunks = []
+                for chunk in batch_chunks:
+                    content = getattr(chunk, 'page_content', "")
+                    if isinstance(content, str) and content.strip():
+                        valid_batch_chunks.append(chunk)
+                    else:
+                        logger.warning(f"Skipping invalid/empty chunk in batch {batch_idx}")
+                
+                if not valid_batch_chunks:
+                    logger.warning(f"Batch {batch_idx} contained no valid chunks. Skipping.")
+                    continue
+
+                texts = [chunk.page_content for chunk in valid_batch_chunks]
+                metadatas = [chunk.metadata for chunk in valid_batch_chunks]
+                
+                logger.info(f"Processing batch {batch_idx}/{total_batches} ({len(valid_batch_chunks)} valid chunks)...")
+                
+                # Generate Embeddings for current batch
+                dense_vectors = list(self.dense_model.embed(texts))
+                sparse_vectors = list(self.sparse_model.embed(texts))
+                
+                points = []
+                for j, (text, meta, dense, sparse) in enumerate(zip(texts, metadatas, dense_vectors, sparse_vectors)):
+                    # Unique ID based on content hash and global index
+                    point_id = hash(text + str(i + j)) % (10**15)
+                    points.append(
+                        models.PointStruct(
+                            id=point_id,
+                            vector={
+                                "dense": dense.tolist(),
+                                "sparse": models.SparseVector(
+                                    indices=sparse.indices.tolist(),
+                                    values=sparse.values.tolist()
+                                )
+                            },
+                            payload={
+                                "text": text,
+                                "metadata": meta
+                            }
+                        )
                     )
+                
+                self.client.upsert(
+                    collection_name=self.collection_name,
+                    points=points
                 )
-            
-            self.client.upsert(
-                collection_name=self.collection_name,
-                points=points
-            )
-            logger.info(f"Successfully upserted {len(points)} chunks to Qdrant.")
+                logger.info(f"Successfully upserted batch {batch_idx}/{total_batches}.")
+
             return True
         except Exception as e:
             logger.error(f"Error upserting to Qdrant: {e}")
             return False
+
 
     def get_client(self) -> QdrantClient:
         return self.client

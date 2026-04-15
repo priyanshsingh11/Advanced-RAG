@@ -36,7 +36,8 @@ def main():
 
         # 3. Upsert into Qdrant
         console.print(f"[yellow]Ingesting {len(chunks)} chunks into Qdrant storage...[/yellow]")
-        success = store.upsert_documents(chunks)
+        console.print("[dim italic]Processing in batches to optimize RAM usage.[/dim italic]")
+        success = store.upsert_documents(chunks, batch_size=500)
 
         if success:
             console.print(Panel(
