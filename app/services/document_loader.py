@@ -9,11 +9,14 @@ logger = logging.getLogger(__name__)
 
 class DocumentLoader:
     def __init__(self):
+        # Professional Recursive Splitter: 
+        # Prioritizes Paragraphs (\n\n), then Lines (\n), then Words (space)
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=settings.CHUNKING_SIZE,
             chunk_overlap=settings.CHUNKING_OVERLAP,
             length_function=len,
             add_start_index=True,
+            separators=["\n\n", "\n", " ", ""] 
         )
 
     def load_and_split(self, data_path: str = "./data") -> List:
