@@ -32,8 +32,9 @@ class Settings(BaseSettings):
     RERANKER_MODEL: str = "BAAI/bge-reranker-base"
     
     # RAG Settings
-    CHUNKING_SIZE: int = 1000
-    CHUNKING_OVERLAP: int = 200
+    CHUNKING_SIZE: int = 500
+    CHUNKING_OVERLAP: int = 100
+    USE_SEMANTIC_CHUNKING: bool = True
     TOP_K_RETRIEVAL: int = 20
     TOP_K_RERANK: int = 5
 
