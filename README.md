@@ -6,7 +6,7 @@ A high-performance, production-grade retrieval pipeline designed for state-of-th
 
 The project follows a modular RAG pipeline designed for maximum precision and recall:
 
-1. **Document Ingestion Layer**: utilizes LangChain's directory loaders and recursive character splitting to process heterogeneous data sources (PDF, TXT).
+1. **Document Ingestion Layer**: utilizes LangChain's directory loaders with advanced **Semantic Chunking** and recursive character splitting to process documents (PDF, TXT) with maximum contextual integrity.
 2. **Hybrid Embedding Generation**:
     - **Dense Vectors**: Employs `BAAI/bge-base-en-v1.5` for deep semantic understanding.
     - **Sparse Vectors**: Generates BM25-compatible sparse embeddings for precise keyword matching.
@@ -81,8 +81,8 @@ graph TD
 ```
 
 ### 1. The Ingestion Phase (Preparation)
-*   **Tech used:** `LangChain` (Loader), `RecursiveCharacterSplitter`, `FastEmbed` (Vectorization), `Qdrant` (Storage).
-*   **Process:** Documents (PDFs/TXTs) are parsed and split into 500-character chunks with a 50-character overlap. Each chunk is vectorized using **BGE Embeddings** to generate both dense (semantic) and sparse (keyword) vectors, which are then stored in **Qdrant**.
+*   **Tech used:** `LangChain` (Loader), `SemanticChunker`, `RecursiveCharacterSplitter`, `FastEmbed` (Vectorization), `Qdrant` (Storage).
+*   **Process:** Documents (PDFs/TXTs) are loaded recursively from the data directory. The system optionally employs **Semantic Chunking** (meaning-based splitting) followed by a **Recursive Character Splitting** refinement (standard 500-character chunks with 100-character overlap). This ensures chunks are both semantically coherent and optimized for LLM context windows. Each chunk is then vectorized using **BGE Embeddings** for hybrid storage in **Qdrant**.
 
 ### 2. The Retrieval Phase (Searching)
 *   **Tech used:** `Ollama` (Llama 3 Rewriter), `FastEmbed` (BGE + BM25), `Qdrant` (Search Engine).
@@ -107,7 +107,7 @@ graph TD
 | **BGE Cross-Encoder** | Quality Judge | Reranks candidates to ensure only the most relevant context is used. |
 | **Qdrant** | Knowledge Vault | Stores vectors and handles high-speed hybrid search logic. |
 | **FastEmbed** | Inference Engine | Optimizes CPU performance for embedding and search operations. |
-| **LangChain** | Document Carpenter | Manages PDF loading and splits text into manageable chunks. |
+| **LangChain** | Document Carpenter | Orchestrates PDF/TXT loading and advanced semantic/recursive chunking. |
 | **FastAPI** | System Interface | Manages the API endpoints and coordinates the async pipeline flow. |
 
 
@@ -117,7 +117,7 @@ graph TD
 
 - **Local Persistence**: Qdrant is configured in persistence mode, allowing for rapid restarts without re-indexing.
 - **Inference Caching**: Embedding and reranker models are cached locally using `fastembed` and `sentence-transformers` protocols.
-- **Chunking Strategy**: Employs recursive splitting with configurable overlap to maintain semantic continuity across document fragments.
+- **Advanced Chunking Strategy**: Employs a hybrid **Semantic + Recursive** splitting strategy. Semantic chunking preserves meaning-based boundaries, while recursive refinement ensures structural consistency and token-limit compliance.
 
 ## License
 This project is licensed under the MIT License.
