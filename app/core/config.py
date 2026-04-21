@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     # Groq Settings
     GROQ_API_KEY: Optional[str] = None
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
+    EVALUATOR_MODEL: str = "llama-3.3-70b-versatile"
+    OLLAMA_EVAL_MODEL: str = "llama3:8b-instruct-q4_0"
 
     # Comparison Models
     OLLAMA_MODELS: str = "llama3,llama3:8b-instruct-q4_0,llama3.2:1b"
