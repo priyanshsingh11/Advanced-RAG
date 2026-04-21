@@ -18,3 +18,8 @@ datasets
 nltk
 langchain-huggingface
 langchain-openai
+unstructured
+unstructured[pdf]
+pdfminer.six
+pillow
+pytesseract
