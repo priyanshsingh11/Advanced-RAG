@@ -17,8 +17,6 @@ class Settings(BaseSettings):
     # Groq Settings
     GROQ_API_KEY: Optional[str] = None
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
-    EVALUATOR_MODEL: str = "llama-3.3-70b-versatile"
-    OLLAMA_EVAL_MODEL: str = "llama3:8b-instruct-q4_0"
 
     # Comparison Models
     OLLAMA_MODELS: str = "llama3,llama3:8b-instruct-q4_0,llama3.2:1b"
@@ -28,9 +26,10 @@ class Settings(BaseSettings):
     QDRANT_PORT: int = 6333
     QDRANT_PATH: str = "./storage"
     COLLECTION_NAME: str = "advanced_rag_collection"
+    EVALUATOR_MODEL: str = "llama3.2:1b"
 
     # Models
-    DENSE_EMBEDDING_MODEL: str = "BAAI/bge-base-en-v1.5"
+    DENSE_EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
     RERANKER_MODEL: str = "BAAI/bge-reranker-base"
     
     # RAG Settings
@@ -43,3 +42,4 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 settings = Settings()
+

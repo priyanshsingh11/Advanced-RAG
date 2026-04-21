@@ -25,12 +25,16 @@ class QdrantStore:
             exists = any(c.name == self.collection_name for c in collections)
 
             if not exists:
-                logger.info(f"Creating collection: {self.collection_name}")
+                # Get dynamic size from the model (FastEmbed)
+                dummy_vector = list(self.dense_model.embed(["test"]))[0]
+                vector_size = len(dummy_vector)
+
+                logger.info(f"Creating collection: {self.collection_name} with size {vector_size}")
                 self.client.create_collection(
                     collection_name=self.collection_name,
                     vectors_config={
                         "dense": models.VectorParams(
-                            size=768, # BGE-base-en size
+                            size=vector_size,
                             distance=models.Distance.COSINE
                         )
                     },

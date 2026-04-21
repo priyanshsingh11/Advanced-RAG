@@ -2,6 +2,7 @@ from ragas import EvaluationDataset
 from ragas.metrics import faithfulness, answer_relevancy, context_precision, context_recall
 from ragas import evaluate
 from langchain_groq import ChatGroq
+from langchain_ollama import ChatOllama
 from langchain_openai import OpenAIEmbeddings # Ragas often defaults to this, but we can override
 from langchain_huggingface import HuggingFaceEmbeddings
 from app.core.config import settings
@@ -14,16 +15,13 @@ logger = logging.getLogger(__name__)
 
 class RagasEvaluator:
     def __init__(self):
-        # 1. Initialize Evaluator LLM (using Groq)
-        if settings.GROQ_API_KEY:
-            self.evaluator_llm = ChatGroq(
-                model=settings.EVALUATOR_MODEL,
-                groq_api_key=settings.GROQ_API_KEY,
-                temperature=0
-            )
-        else:
-            logger.warning("GROQ_API_KEY not found. Ragas evaluation might fail or need OpenAI.")
-            self.evaluator_llm = None
+        # 1. Initialize Evaluator LLM (using local Ollama as requested)
+        logger.info(f"Initializing Ragas Evaluator with {settings.EVALUATOR_MODEL}")
+        self.evaluator_llm = ChatOllama(
+            model=settings.EVALUATOR_MODEL,
+            base_url=settings.OLLAMA_BASE_URL,
+            temperature=0
+        )
 
         # 2. Initialize Embeddings for metrics that need them (like answer_relevancy)
         self.embeddings = HuggingFaceEmbeddings(model_name=settings.DENSE_EMBEDDING_MODEL)
@@ -45,7 +43,7 @@ class RagasEvaluator:
         Runs Ragas evaluation on the provided data.
         """
         if not self.evaluator_llm:
-            raise ValueError("Evaluator LLM (Groq) is not initialized. Please check your API keys.")
+            raise ValueError("Evaluator LLM is not initialized.")
 
         try:
             # Create the dataset format required by Ragas
