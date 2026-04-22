@@ -8,7 +8,7 @@ class Settings(BaseSettings):
 
     # Ollama Settings
     OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "llama3:8b-instruct-q4_0"
+    OLLAMA_MODEL: str = "llama3.2:1b"
 
     # API Keys
     OPENAI_API_KEY: Optional[str] = None
