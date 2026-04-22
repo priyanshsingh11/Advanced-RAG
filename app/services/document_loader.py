@@ -57,7 +57,7 @@ class DocumentLoader:
             pdf_loader = DirectoryLoader(
                 data_path,
                 glob="**/*.pdf",
-                loader_cls=UnstructuredPDFLoader
+                loader_cls=PyPDFLoader
             )
             pdf_docs = pdf_loader.load()
             documents.extend(pdf_docs)
