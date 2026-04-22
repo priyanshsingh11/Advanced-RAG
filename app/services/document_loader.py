@@ -1,8 +1,7 @@
 from langchain_community.document_loaders import (
     PyPDFLoader,
     TextLoader,
-    DirectoryLoader,
-    UnstructuredPDFLoader
+    DirectoryLoader
 )
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_experimental.text_splitter import SemanticChunker
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class DocumentLoader:
     def __init__(self):
-        # 1. Recursive Splitter (structure-based)
+        # 1. Recursive Splitter
         self.recursive_splitter = RecursiveCharacterTextSplitter(
             chunk_size=settings.CHUNKING_SIZE,
             chunk_overlap=settings.CHUNKING_OVERLAP,
@@ -26,24 +25,22 @@ class DocumentLoader:
             separators=["\n\n", "\n", " ", ""]
         )
 
-        # 2. Semantic Splitter (meaning-based)
+        # 2. Semantic Splitter
         if settings.USE_SEMANTIC_CHUNKING:
             logger.info(f"Initializing SemanticChunker with {settings.DENSE_EMBEDDING_MODEL}")
-            
+
             self.embeddings = HuggingFaceEmbeddings(
                 model_name=settings.DENSE_EMBEDDING_MODEL
             )
 
             self.semantic_splitter = SemanticChunker(
                 self.embeddings,
-                breakpoint_threshold_type="standard_deviation"  # safer than percentile
+                breakpoint_threshold_type="standard_deviation"
             )
         else:
             self.semantic_splitter = None
 
     def load_and_split(self, data_path: str = "./data") -> List:
-        """Loads PDFs and Text files, cleans them, and splits into chunks."""
-        
         documents = []
 
         if not os.path.exists(data_path):
@@ -52,54 +49,61 @@ class DocumentLoader:
 
         try:
             # ---------------------------
-            # 📄 Load PDFs (better loader)
+            # 📄 Load PDFs
             # ---------------------------
             pdf_loader = DirectoryLoader(
                 data_path,
                 glob="**/*.pdf",
                 loader_cls=PyPDFLoader
             )
-            pdf_docs = pdf_loader.load()
-            documents.extend(pdf_docs)
+            documents.extend(pdf_loader.load())
 
             # ---------------------------
-            # 📄 Load Text Files
+            # 📄 Load TXT files
             # ---------------------------
             txt_loader = DirectoryLoader(
                 data_path,
                 glob="**/*.txt",
                 loader_cls=TextLoader
             )
-            txt_docs = txt_loader.load()
-            documents.extend(txt_docs)
+            documents.extend(txt_loader.load())
 
             logger.info(f"Total raw documents loaded: {len(documents)}")
 
             if not documents:
-                logger.warning("No documents found in the data directory.")
+                logger.warning("No documents found.")
                 return []
 
             # ---------------------------
-            # 🧹 CLEAN DOCUMENTS (CRITICAL FIX)
+            # 🧹 STRICT CLEANING (FIXED)
             # ---------------------------
             cleaned_documents = []
 
             for doc in documents:
                 try:
-                    if doc.page_content and isinstance(doc.page_content, str):
-                        text = doc.page_content.strip()
+                    text = doc.page_content
 
-                        # Skip empty or very small text
-                        if len(text) > 20:
-                            doc.page_content = text
-                            cleaned_documents.append(doc)
-                        else:
-                            logger.warning("Skipping small/empty document chunk")
-                    else:
-                        logger.warning("Skipping invalid document format")
+                    # Strict validation
+                    if not isinstance(text, str):
+                        continue
+
+                    text = text.strip()
+
+                    # Remove empty / small / garbage text
+                    if len(text) < 30:
+                        continue
+
+                    # Fix encoding issues
+                    text = text.encode("utf-8", errors="ignore").decode("utf-8")
+
+                    if not text or text.isspace():
+                        continue
+
+                    doc.page_content = text
+                    cleaned_documents.append(doc)
 
                 except Exception as e:
-                    logger.warning(f"Error cleaning document: {e}")
+                    logger.debug(f"Skipping problematic document: {e}")
 
             logger.info(f"Valid documents after cleaning: {len(cleaned_documents)}")
 
@@ -108,18 +112,24 @@ class DocumentLoader:
                 return []
 
             # ---------------------------
-            # ✂️ CHUNKING
+            # ✂️ CHUNKING (SAFE)
             # ---------------------------
             if settings.USE_SEMANTIC_CHUNKING and self.semantic_splitter:
-                logger.info("Using Semantic Chunking for document splitting...")
+                logger.info("Using Semantic Chunking...")
 
-                semantic_chunks = self.semantic_splitter.split_documents(cleaned_documents)
+                try:
+                    semantic_chunks = self.semantic_splitter.split_documents(cleaned_documents)
+                    logger.info(f"Semantic chunks created: {len(semantic_chunks)}")
 
-                logger.info(f"Semantic chunks created: {len(semantic_chunks)}")
+                    # Hybrid refinement
+                    logger.info("Refining with recursive splitting...")
+                    chunks = self.recursive_splitter.split_documents(semantic_chunks)
 
-                # Hybrid refinement
-                logger.info("Refining semantic chunks with recursive splitting...")
-                chunks = self.recursive_splitter.split_documents(semantic_chunks)
+                except Exception as e:
+                    logger.error(f"Semantic chunking failed: {e}")
+                    logger.warning("Falling back to recursive chunking...")
+
+                    chunks = self.recursive_splitter.split_documents(cleaned_documents)
 
             else:
                 logger.info("Using Recursive Character splitting...")
