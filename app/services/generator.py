@@ -107,7 +107,12 @@ Context:
             }
 
     def _prepare_context(self, docs: List[Dict[str, Any]]) -> str:
-        return "\n\n".join([f"Source: {d['metadata'].get('source', 'Unknown')}\nContent: {d['content']}" for d in docs])
+        context_parts = []
+        for d in docs:
+            source = d['metadata'].get('source', 'Unknown')
+            page = d['metadata'].get('page', 'N/A')
+            context_parts.append(f"Source: {source} | Page: {page}\nContent: {d['content']}")
+        return "\n\n".join(context_parts)
 
     def _estimate_confidence(self, docs: List[Dict[str, Any]]) -> float:
         """Heuristic confidence score based on reranker scores."""

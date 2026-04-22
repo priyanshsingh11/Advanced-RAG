@@ -30,14 +30,14 @@ class Settings(BaseSettings):
 
     # Models
     DENSE_EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
-    RERANKER_MODEL: str = "BAAI/bge-reranker-base"
+    RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     
     # RAG Settings
     CHUNKING_SIZE: int = 500
     CHUNKING_OVERLAP: int = 100
     USE_SEMANTIC_CHUNKING: bool = True
-    TOP_K_RETRIEVAL: int = 20
-    TOP_K_RERANK: int = 5
+    TOP_K_RETRIEVAL: int = 30
+    TOP_K_RERANK: int = 10
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
