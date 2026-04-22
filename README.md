@@ -99,11 +99,6 @@ graph TD
         Output --> Judge[LLM-as-a-Judge - Evaluator]
         Judge --> Results[Metrics: Accuracy, Faithfulness, Latency]
     end
-
-    style Ingestion_Layer fill:#f9f,stroke:#333,stroke-width:2px
-    style Inference_Pipeline fill:#bbf,stroke:#333,stroke-width:2px
-    style Evaluation fill:#dfd,stroke:#333,stroke-width:2px
-    style Qdrant_Store fill:#f96,stroke:#333,stroke-width:2px
 ```
 
 ### 1. The Ingestion Phase (Preparation)
