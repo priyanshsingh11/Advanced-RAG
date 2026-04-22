@@ -42,3 +42,7 @@ storage/
 Thumbs.db
 
 data/
+
+# Benchmark Results
+benchmark_results_*.csv
+benchmark_summary_*.csv
