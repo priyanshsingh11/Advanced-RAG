@@ -71,17 +71,39 @@ The system processes queries through four distinct technical phases:
 
 ```mermaid
 graph TD
-    A[User Query] --> B(Query Rewriter - Llama 3.2)
-    B --> C{Hybrid Search}
-    C --> D[Dense Search - MiniLM-L6-v2]
-    C --> E[Sparse Search - BM25]
-    D --> F[Reciprocal Rank Fusion - RRF]
-    E --> F
-    F --> G[Top 30 Candidates]
-    G --> H(Cross-Encoder Reranker - MS MARCO)
-    H --> I[Top 10 Refined Context]
-    I --> J(Generator - Llama 3.2:1b)
-    J --> K[Final Answer + Sources]
+    subgraph Ingestion_Layer [1. Ingestion Layer]
+        Docs[Source Documents - PDF/TXT] --> Loader[LangChain Directory Loader]
+        Loader --> SChunk[Semantic Chunking - Meaning Boundaries]
+        SChunk --> RSplit[Recursive Character Splitting - Structural]
+        RSplit --> Embed[FastEmbed - MiniLM & BM25]
+        Embed --> Qdrant_Store[(Qdrant Vector DB - Persistent)]
+    end
+
+    subgraph Inference_Pipeline [2. Advanced Inference Pipeline]
+        User[User Query] --> Rewriter[Query Rewriter - Llama 3.2]
+        Rewriter -- Search-Optimized Query --> Hybrid{Hybrid Search Engine}
+        
+        subgraph Retrieval [Retrieval & Fusion]
+            Hybrid --> Dense[Dense Search - MiniLM-L6-v2]
+            Hybrid --> Sparse[Sparse Search - BM25]
+            Dense --> RRF[Reciprocal Rank Fusion - RRF]
+            Sparse --> RRF
+        end
+
+        RRF -- Top 30 Candidates --> Reranker[Cross-Encoder Reranker - MS MARCO]
+        Reranker -- Top 10 Refined Context --> LLM[Generator - Llama 3.2:1b]
+        LLM -- Hallucination-Free Answer --> Output[Final Answer + Citations]
+    end
+
+    subgraph Evaluation [3. Evaluation Loop]
+        Output --> Judge[LLM-as-a-Judge - Evaluator]
+        Judge --> Results[Metrics: Accuracy, Faithfulness, Latency]
+    end
+
+    style Ingestion_Layer fill:#f9f,stroke:#333,stroke-width:2px
+    style Inference_Pipeline fill:#bbf,stroke:#333,stroke-width:2px
+    style Evaluation fill:#dfd,stroke:#333,stroke-width:2px
+    style Qdrant_Store fill:#f96,stroke:#333,stroke-width:2px
 ```
 
 ### 1. The Ingestion Phase (Preparation)
