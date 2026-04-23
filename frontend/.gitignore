@@ -20,6 +20,8 @@ next-env.d.ts
 .DS_Store
 *.pem
 Thumbs.db
+package-lock.json
+tsconfig.json
 
 # Debug Logs
 npm-debug.log*
