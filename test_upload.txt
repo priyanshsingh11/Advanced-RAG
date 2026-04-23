@@ -1,0 +1,4 @@
+The Advanced RAG system now supports document uploads.
+This feature allows users to bring their own context into the conversation.
+The system uses a Parent-Child chunking strategy to maintain semantic context.
+Uploaded files are stored in the /data directory and indexed in Qdrant.

@@ -166,8 +166,13 @@ body {
   width: 100%;
 }
 
-.message.user { align-items: flex-end; }
-.message.assistant { align-items: flex-start; }
+.message.user {
+  align-items: flex-end;
+}
+
+.message.assistant {
+  align-items: flex-start;
+}
 
 .message-bubble {
   max-width: 85%;

@@ -144,7 +144,7 @@ export default function ChatPage() {
               onChange={handleFileUpload}
               accept=".pdf,.txt"
             />
-            
+
             <button
               type="button"
               className="attach-btn"
