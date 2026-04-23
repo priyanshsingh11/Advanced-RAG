@@ -37,18 +37,33 @@ class DocumentLoader:
         else:
             self.semantic_splitter = None
 
-    def load_and_split(self, data_path: str = "./data") -> List:
+    def load_and_split(self, data_path: str = "./data", file_path: str = None) -> List:
         """Loads documents and splits them using a Parent-Child strategy."""
         documents = []
-        if not os.path.exists(data_path):
-            return []
-
+        
         try:
-            # Load PDFs and TXTs
-            pdf_loader = DirectoryLoader(data_path, glob="**/*.pdf", loader_cls=PyPDFLoader)
-            documents.extend(pdf_loader.load())
-            txt_loader = DirectoryLoader(data_path, glob="**/*.txt", loader_cls=TextLoader)
-            documents.extend(txt_loader.load())
+            if file_path:
+                if not os.path.exists(file_path):
+                    logger.error(f"File not found: {file_path}")
+                    return []
+                
+                if file_path.lower().endswith(".pdf"):
+                    loader = PyPDFLoader(file_path)
+                    documents.extend(loader.load())
+                elif file_path.lower().endswith(".txt"):
+                    loader = TextLoader(file_path)
+                    documents.extend(loader.load())
+                else:
+                    logger.error(f"Unsupported file type: {file_path}")
+                    return []
+            else:
+                if not os.path.exists(data_path):
+                    return []
+                # Load PDFs and TXTs
+                pdf_loader = DirectoryLoader(data_path, glob="**/*.pdf", loader_cls=PyPDFLoader)
+                documents.extend(pdf_loader.load())
+                txt_loader = DirectoryLoader(data_path, glob="**/*.txt", loader_cls=TextLoader)
+                documents.extend(txt_loader.load())
 
             if not documents:
                 return []
