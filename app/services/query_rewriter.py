@@ -2,6 +2,7 @@ from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from app.core.config import settings
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -11,22 +12,39 @@ class QueryRewriter:
         self.llm = ChatOllama(
             model=settings.OLLAMA_MODEL,
             base_url=settings.OLLAMA_BASE_URL,
-            temperature=0
+            temperature=0,
+            format="json" # Ensure Ollama outputs valid JSON
         )
         
         self.prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are an expert search assistant. Your task is to rephrase the user's query to make it more suitable for a vector search engine and keyword search (BM25). Focus on extracting core entities and intents."),
-            ("user", "Original Query: {query}\n\nRephrased Query:")
+            ("system", """You are an expert search assistant. Your task is to analyze the user query and output a JSON object.
+            
+            Fields:
+            1. "rewritten_query": The user's query optimized for vector search (semantic) and BM25 search (keywords).
+            2. "filters": A list of book or file names mentioned by the user to restrict the search. If none are mentioned, return an empty list [].
+            
+            Example output:
+            {{
+                "rewritten_query": "difference between bagging and boosting in ensemble learning",
+                "filters": ["AI.pdf"]
+            }}"""),
+            ("user", "User Query: {query}")
         ])
         
         self.chain = self.prompt | self.llm
 
-    def rewrite(self, query: str) -> str:
-        """Rewrites the user query for optimized retrieval."""
+    def rewrite(self, query: str) -> dict:
+        """Rewrites the user query and extracts filters."""
         try:
-            logger.info(f"Rewriting query using {settings.OLLAMA_MODEL}")
+            logger.info(f"Analyzing query for rewriting and filters...")
             response = self.chain.invoke({"query": query})
-            return response.content.strip()
+            
+            # Parse JSON response
+            data = json.loads(response.content.strip())
+            return {
+                "rewritten_query": data.get("rewritten_query", query),
+                "filters": data.get("filters", [])
+            }
         except Exception as e:
             logger.error(f"Error in QueryRewriter: {e}")
-            return query # Fallback to original query
+            return {"rewritten_query": query, "filters": []}
