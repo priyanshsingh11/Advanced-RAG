@@ -33,11 +33,22 @@ async def lifespan(app: FastAPI):
     # Shutdown: Clean up if needed
     logger.info("Shutting down RAG resources...")
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(
     title=settings.APP_NAME,
     description="Advanced RAG Backend with Hybrid Search and Local LLM (Ollama)",
     version="1.0.0",
     lifespan=lifespan
+)
+
+# Enable CORS for frontend integration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify your frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Include API routes
