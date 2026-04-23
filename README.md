@@ -4,22 +4,24 @@ A high-performance, production-grade retrieval pipeline designed for state-of-th
 
 ## System Architecture
 
-The project follows a modular RAG pipeline designed for maximum precision and recall:
+The project follows an **Advanced RAG (Multi-Stage)** pipeline designed for maximum precision and recall:
 
-1. **Document Ingestion Layer**: utilizes LangChain's directory loaders with advanced **Semantic Chunking** and recursive character splitting to process documents (PDF, TXT) with maximum contextual integrity.
-2. **Hybrid Embedding Generation**:
-    - **Dense Vectors**: Employs `sentence-transformers/all-MiniLM-L6-v2` for deep semantic understanding.
-    - **Sparse Vectors**: Generates BM25-compatible sparse embeddings for precise keyword matching.
-3. **Vector Infrastructure (Qdrant)**: A high-performance vector database that manages dual-indexing (Dense + Sparse) and executes Reciprocal Rank Fusion (RRF) at the database level for optimized hybrid results.
-4. **Ranking Refinement (Cross-Encoder)**: Implements a second-stage reranker using `cross-encoder/ms-marco-MiniLM-L-6-v2` to mitigate "lost in the middle" phenomena and ensure only the most relevant context reaches the generation stage.
+1.  **Preparation (Ingestion Layer)**: Implements a **Small-to-Big (Parent-Child) Chunking** strategy. Documents are indexed as small chunks (400 chars) for precise vector matching, while preserving large parent contexts (1500 chars) for the LLM to maintain global coherence.
+2.  **Analysis (Query Understanding)**: An LLM-powered **Query Analyzer** rephrases user input and automatically extracts **Metadata Filters** (e.g., specific book names) to restrict the search space.
+3.  **Retrieval (HyDE + Hybrid Search)**:
+    - **HyDE (Hypothetical Document Embeddings)**: Generates a "hypothetical answer" to bridge the semantic gap between questions and textbook content.
+    - **Dense Vectors**: Uses `all-MiniLM-L6-v2` to match the HyDE answer against child chunks.
+    - **Sparse Vectors**: Uses BM25 for exact keyword matching on the original query.
+    - **Fusion**: Employs Reciprocal Rank Fusion (RRF) with metadata filtering in Qdrant.
+4.  **Refinement (Reranking)**: A **Cross-Encoder Reranker** (`BAAI/bge-reranker-base`) re-scores the candidates to ensure high-precision grounding.
+5.  **Generation**: The top refined results are expanded to their **Parent Context** and passed to the LLM for a hallucination-free, cited response.
 
 ## Technical Components
 
-- **FastAPI**: Asynchronous Python framework for high-concurrency API performance.
-- **Qdrant**: Vector search engine with native support for hybrid search and persistent disk storage.
-- **FastEmbed**: Optimized inference library for BGE and BM25 embeddings, reducing latency and resource overhead.
-- **Sentence-Transformers**: Powering the Cross-Encoder reranking stage.
-- **Pydantic V2**: Robust data validation and settings management.
+- **FastAPI**: Asynchronous Python framework with **Lifespan Management** for efficient resource handling.
+- **Qdrant**: Vector search engine supporting hybrid search, persistence, and complex metadata filtering.
+- **FastEmbed**: High-speed inference for BGE and BM25 embeddings.
+- **Ollama**: Powering local Query Analysis, HyDE generation, and final answer synthesis.
 
 ## Project Structure
 
@@ -72,32 +74,30 @@ The system processes queries through four distinct technical phases:
 ```mermaid
 graph TD
     subgraph Ingestion_Layer [1. Ingestion Layer]
-        Docs[Source Documents - PDF/TXT] --> Loader[LangChain Directory Loader]
-        Loader --> SChunk[Semantic Chunking - Meaning Boundaries]
-        SChunk --> RSplit[Recursive Character Splitting - Structural]
-        RSplit --> Embed[FastEmbed - MiniLM & BM25]
-        Embed --> Qdrant_Store[(Qdrant Vector DB - Persistent)]
+        Docs[Source Documents - PDF/TXT] --> Loader[Document Loader]
+        Loader --> PChunk[Parent Chunks - 1500 chars]
+        PChunk --> CChunk[Child Chunks - 400 chars]
+        CChunk --> Embed[FastEmbed - MiniLM & BM25]
+        Embed --> Qdrant_Store[(Qdrant Vector DB)]
     end
 
     subgraph Inference_Pipeline [2. Advanced Inference Pipeline]
-        User[User Query] --> Rewriter[Query Rewriter - Llama 3.2]
-        Rewriter -- Search-Optimized Query --> Hybrid{Hybrid Search Engine}
+        User[User Query] --> Analyzer[Query Analyzer - Llama 3.2]
+        Analyzer -- Filters --> Hybrid[Hybrid Search Engine]
+        Analyzer -- Rewritten Query --> HyDE[HyDE Generator - Llama 3.2]
+        HyDE -- Hypothetical Answer --> Hybrid
         
-        subgraph Retrieval [Retrieval & Fusion]
-            Hybrid --> Dense[Dense Search - MiniLM-L6-v2]
-            Hybrid --> Sparse[Sparse Search - BM25]
-            Dense --> RRF[Reciprocal Rank Fusion - RRF]
-            Sparse --> RRF
+        subgraph Retrieval [Retrieval & Expansion]
+            Hybrid --> Dense[Dense Search - HyDE Vector]
+            Hybrid --> Sparse[Sparse Search - Keywords]
+            Dense --> Fusion[RRF Fusion + Metadata Filter]
+            Sparse --> Fusion
         end
 
-        RRF -- Top 30 Candidates --> Reranker[Cross-Encoder Reranker - MS MARCO]
-        Reranker -- Top 10 Refined Context --> LLM[Generator - Llama 3.2:1b]
-        LLM -- Hallucination-Free Answer --> Output[Final Answer + Citations]
-    end
-
-    subgraph Evaluation [3. Evaluation Loop]
-        Output --> Judge[LLM-as-a-Judge - Evaluator]
-        Judge --> Results[Metrics: Accuracy, Faithfulness, Latency]
+        Fusion -- Top Child Chunks --> ParentExt[Parent Context Expansion]
+        ParentExt -- Rich Context --> Reranker[Cross-Encoder Reranker]
+        Reranker -- Top Context --> LLM[Generator - Llama 3.2]
+        LLM --> Output[Final Answer + Citations]
     end
 ```
 
@@ -121,15 +121,14 @@ graph TD
 
 | Technology | Role | Specific Task |
 | :--- | :--- | :--- |
-| **Llama 3.2:1b (Ollama)** | Search Architect | Rephrases messy user queries into search-optimized terms. |
-| **Llama 3.2:1b (Ollama)** | Generator | Writes the final human-readable answer based on provided context. |
-| **MiniLM-L6-v2 Embedding** | Concept Translator | Converts text into mathematical vectors for semantic concept matching. |
-| **BM25 (Sparse)** | Keyword Expert | Finds exact matches for names, technical codes, and specific terms. |
-| **MS MARCO Cross-Encoder** | Quality Judge | Reranks candidates to ensure only the most relevant context is used. |
-| **Qdrant** | Knowledge Vault | Stores vectors and handles high-speed hybrid search logic. |
-| **FastEmbed** | Inference Engine | Optimizes CPU performance for embedding and search operations. |
-| **LangChain** | Document Carpenter | Orchestrates PDF/TXT loading and advanced semantic/recursive chunking. |
-| **FastAPI** | System Interface | Manages the API endpoints and coordinates the async pipeline flow. |
+| **Llama 3.2 (Ollama)** | Query Analyzer | Rephrases queries and extracts automated metadata filters. |
+| **Llama 3.2 (Ollama)** | HyDE Generator | Creates hypothetical answers to improve semantic retrieval hits. |
+| **Llama 3.2 (Ollama)** | Answer Generator | Synthesizes the final response using parent-child context. |
+| **MiniLM-L6-v2** | Concept Translator | Converts text/HyDE into dense vectors for semantic matching. |
+| **BM25 (Sparse)** | Keyword Expert | Ensures exact technical terms and names are never missed. |
+| **BGE Reranker** | Quality Judge | Re-scores candidates to move the most relevant info to the top. |
+| **Qdrant** | Knowledge Vault | Executes high-speed hybrid search with hard metadata filtering. |
+| **FastAPI Lifespan** | Orchestrator | Manages the asynchronous flow and persistent resource lifecycle. |
 
 ## Model Benchmarking & Selection
 
