@@ -2,6 +2,19 @@
 
 A high-performance, production-grade retrieval pipeline designed for state-of-the-art Document AI applications. This system implements a modular multi-stage retrieval architecture using hybrid search (Dense + Sparse) and Cross-Encoder reranking.
 
+## Project Interface
+
+The application features a premium, pixel-styled dark-mode interface designed for a seamless user experience.
+
+![Home Page - What can I help with?](docs/images/demo_hero.png)
+*Modern, centered homepage with a minimalist glassmorphism search bar.*
+
+![Chat Experience - Neural Networks](docs/images/demo_chat_1.png)
+*Structured, cited responses with full Markdown support and clean typography.*
+
+![Comparative Analysis - Bagging vs Boosting](docs/images/demo_chat_2.png)
+*High-precision retrieval and side-by-side concept explanation.*
+
 ## System Architecture
 
 The project follows an **Advanced RAG (Multi-Stage)** pipeline designed for maximum precision and recall:
