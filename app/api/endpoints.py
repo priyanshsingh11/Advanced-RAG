@@ -1,47 +1,42 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks
-from app.schemas.query import QueryRequest, QueryResponse, IngestResponse
-from app.services.orchestrator import RAGOrchestrator
-from app.services.document_loader import DocumentLoader
-from app.db.qdrant_store import QdrantStore
+from fastapi import APIRouter, HTTPException, Request
+from app.schemas.query import QueryRequest, QueryResponse, IngestResponse, ComparisonResponse
 import logging
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Initialize orchestrator and store at module level for persistence
-orchestrator = RAGOrchestrator()
-loader = DocumentLoader()
-store = QdrantStore()
-
-from app.schemas.query import QueryRequest, QueryResponse, IngestResponse, ComparisonResponse
-
 @router.post("/query", response_model=QueryResponse)
-async def query_rag(request: QueryRequest):
+async def query_rag(request_body: QueryRequest, request: Request):
     """Executes a RAG query using the modular pipeline."""
     try:
-        result = orchestrator.query(request.query)
+        orchestrator = request.app.state.orchestrator
+        result = orchestrator.query(request_body.query)
         if not result["sources"]:
-            logger.warning(f"No documents found for query: {request.query}")
+            logger.warning(f"No documents found for query: {request_body.query}")
         return QueryResponse(**result)
     except Exception as e:
         logger.error(f"Error processing query: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/compare", response_model=ComparisonResponse)
-async def compare_models(request: QueryRequest):
+async def compare_models(request_body: QueryRequest, request: Request):
     """Executes a RAG query and compares multiple LLMs."""
     try:
-        result = orchestrator.compare(request.query)
+        orchestrator = request.app.state.orchestrator
+        result = orchestrator.compare(request_body.query)
         return ComparisonResponse(**result)
     except Exception as e:
         logger.error(f"Error comparing models: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/ingest", response_model=IngestResponse)
-async def ingest_documents():
+async def ingest_documents(request: Request):
     """Triggers document ingestion from the /data folder."""
     try:
+        loader = request.app.state.loader
+        store = request.app.state.store
+        
         # 1. Load and split documents
         chunks = loader.load_and_split()
         if not chunks:

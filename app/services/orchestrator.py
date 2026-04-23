@@ -10,9 +10,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 class RAGOrchestrator:
-    def __init__(self):
+    def __init__(self, store: QdrantStore = None):
         # Initialize all services
-        self.store = QdrantStore()
+        self.store = store or QdrantStore()
         self.rewriter = QueryRewriter()
         self.retriever = HybridRetriever(self.store)
         self.reranker = Reranker()

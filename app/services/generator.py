@@ -8,6 +8,8 @@ import time
 
 logger = logging.getLogger(__name__)
 
+import math
+
 class Generator:
     def __init__(self):
         # Default LLM (compatible with existing code)
@@ -115,9 +117,30 @@ Context:
         return "\n\n".join(context_parts)
 
     def _estimate_confidence(self, docs: List[Dict[str, Any]]) -> float:
-        """Heuristic confidence score based on reranker scores."""
+        """Improved confidence score using sigmoid normalization and weighting top results."""
         if not docs:
             return 0.0
-        scores = [d.get("rerank_score", 0.5) for d in docs]
-        avg_score = sum(scores) / len(scores)
-        return min(max(avg_score, 0.0), 1.0)
+        
+        try:
+            # Reranker scores for BGE/MS-MARCO are logits, not probabilities.
+            # Sigmoid maps them to (0, 1). 
+            # A score of 0.0 becomes 0.5 (Neutral), > 0 is positive/relevant.
+            def sigmoid(x):
+                # Clamp x to avoid overflow in exp
+                x = max(min(x, 20), -20)
+                return 1 / (1 + math.exp(-x))
+
+            scores = [d.get("rerank_score", 0.0) for d in docs]
+            normalized = [sigmoid(s) for s in scores]
+            
+            # Weighted confidence: The top-1 document is the most important indicator.
+            # We also consider the top-3 to ensure stability.
+            top_1 = normalized[0]
+            top_3_avg = sum(normalized[:3]) / min(len(normalized), 3)
+            
+            # 70% weight on the best match, 30% on the general quality of the top-3.
+            confidence = (top_1 * 0.7) + (top_3_avg * 0.3)
+            return round(confidence, 4)
+        except Exception as e:
+            logger.error(f"Error calculating confidence: {e}")
+            return 0.5
