@@ -1,0 +1,16 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.db
+.git
+.gitignore
+.env.example
+frontend/
+node_modules/
+storage/
+benchmark_results/
+docs/
+*.csv
+*.log
