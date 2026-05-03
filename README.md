@@ -18,22 +18,6 @@ The application features a premium, pixel-styled dark-mode interface designed fo
 ### ✨ Recent Updates: Smart Highlighting
 The UI now features **System-Level Notifications** for document indexing. When you upload a new document, the system provides a distinctive, highlighted confirmation bubble with a file icon, ensuring you know exactly when your knowledge base has been updated.
 
-## System Architecture
-
-The project follows an **Advanced RAG (Multi-Stage)** pipeline designed for maximum precision and recall:
-
-1.  **Preparation (Ingestion Layer)**: Implements a **Small-to-Big (Parent-Child) Chunking** strategy. Documents are indexed as small chunks (400 chars) for precise vector matching, while preserving large parent contexts (1500 chars) for the LLM to maintain global coherence.
-2.  **Analysis (Query Understanding)**: An LLM-powered **Query Analyzer** rephrases user input and automatically extracts **Metadata Filters** (e.g., specific book names) to restrict the search space.
-3.  **Retrieval (HyDE + Hybrid Search)**:
-    - **HyDE (Hypothetical Document Embeddings)**: Generates a "hypothetical answer" to bridge the semantic gap between questions and textbook content.
-    - **Dense Vectors**: Uses `all-MiniLM-L6-v2` to match the HyDE answer against child chunks.
-    - **Sparse Vectors**: Uses BM25 for exact keyword matching on the original query.
-    - **Fusion**: Employs Reciprocal Rank Fusion (RRF) with metadata filtering in Qdrant.
-4.  **Refinement (Reranking)**: A **Cross-Encoder Reranker** (`BAAI/bge-reranker-base`) re-scores the candidates to ensure high-precision grounding.
-5.  **Generation**: The top refined results are expanded to their **Parent Context** and passed to the LLM for a hallucination-free, cited response.
-
-```
-
 ## 🚀 Quick Start (Docker)
 
 The fastest way to get the entire project (Backend + Frontend) running:
@@ -49,10 +33,48 @@ The fastest way to get the entire project (Backend + Frontend) running:
 
 ---
 
-## Setup and Installation
+## System Architecture
 
-### Option 2: Local Development
-If you prefer running without Docker:
+The project follows an **Advanced RAG (Multi-Stage)** pipeline designed for maximum precision and recall:
+
+1.  **Preparation (Ingestion Layer)**: Implements a **Small-to-Big (Parent-Child) Chunking** strategy. Documents are indexed as small chunks (400 chars) for precise vector matching, while preserving large parent contexts (1500 chars) for the LLM to maintain global coherence.
+2.  **Analysis (Query Understanding)**: An LLM-powered **Query Analyzer** rephrases user input and automatically extracts **Metadata Filters** (e.g., specific book names) to restrict the search space.
+3.  **Retrieval (HyDE + Hybrid Search)**:
+    - **HyDE (Hypothetical Document Embeddings)**: Generates a "hypothetical answer" to bridge the semantic gap between questions and textbook content.
+    - **Dense Vectors**: Uses `all-MiniLM-L6-v2` to match the HyDE answer against child chunks.
+    - **Sparse Vectors**: Uses BM25 for exact keyword matching on the original query.
+    - **Fusion**: Employs Reciprocal Rank Fusion (RRF) with metadata filtering in Qdrant.
+4.  **Refinement (Reranking)**: A **Cross-Encoder Reranker** (`BAAI/bge-reranker-base`) re-scores the candidates to ensure high-precision grounding.
+5.  **Generation**: The top refined results are expanded to their **Parent Context** and passed to the LLM for a hallucination-free, cited response.
+
+## Technical Components
+
+- **FastAPI**: Asynchronous Python framework with **Lifespan Management** for efficient resource handling.
+- **Qdrant**: Vector search engine supporting hybrid search, persistence, and complex metadata filtering.
+- **FastEmbed**: High-speed inference for BGE and BM25 embeddings.
+- **Ollama**: Powering local Query Analysis, HyDE generation, and final answer synthesis.
+
+## Project Structure
+
+```text
+├── app/                # Backend: FastAPI logic
+├── frontend/           # Frontend: Next.js + React UI
+│   ├── src/app/        # App router logic
+│   └── Dockerfile      # Frontend containerization
+├── data/               # Persistent storage for raw source documents
+├── storage/            # Local Qdrant database storage
+├── benchmark_models.py # Automated model benchmarking & scoring
+├── cli_compare.py      # Interactive side-by-side model comparison
+├── evaluate_pipeline.py# RAGAS-based pipeline evaluation
+├── ingest.py           # Document ingestion entrypoint
+├── .env                # Environment-specific configuration
+├── requirements.txt    # Backend dependency specifications
+├── Dockerfile          # Backend containerization
+├── docker-compose.yml  # Full-stack orchestration
+└── README.md           # System documentation
+```
+
+## Setup and Installation
 
 ### Option 2: Local Development
 If you prefer running without Docker:
