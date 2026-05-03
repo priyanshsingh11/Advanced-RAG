@@ -1,5 +1,5 @@
-# Use an official Python slim image as the base
-FROM python:3.11-slim
+# Use a full Python image to ensure all scientific dependencies build correctly
+FROM python:3.11
 
 # Set the working directory inside the container
 WORKDIR /app
