@@ -15,6 +15,9 @@ The application features a premium, pixel-styled dark-mode interface designed fo
 ![Comparative Analysis - Bagging vs Boosting](docs/images/demo_chat_2.png)
 *High-precision retrieval and side-by-side concept explanation.*
 
+### ✨ Recent Updates: Smart Highlighting
+The UI now features **System-Level Notifications** for document indexing. When you upload a new document, the system provides a distinctive, highlighted confirmation bubble with a file icon, ensuring you know exactly when your knowledge base has been updated.
+
 ## System Architecture
 
 The project follows an **Advanced RAG (Multi-Stage)** pipeline designed for maximum precision and recall:
@@ -39,46 +42,55 @@ The project follows an **Advanced RAG (Multi-Stage)** pipeline designed for maxi
 ## Project Structure
 
 ```text
-Advanced RAG/
-├── app/
-│   ├── api/          # Asynchronous endpoint definitions
-│   ├── core/         # System configuration and global settings
-│   ├── db/           # Database connection and collection management
-│   ├── services/     # Modular pipeline components (Retrieval, Reranking, Loading)
-│   └── main.py       # Application entry point
-├── data/             # Persistent storage for raw source documents
-├── storage/          # Local Qdrant database storage
-├── benchmark_models.py  # Automated model benchmarking & scoring
-├── cli_compare.py       # Interactive side-by-side model comparison
-├── evaluate_pipeline.py # RAGAS-based pipeline evaluation
-├── ingest.py            # Document ingestion entrypoint
-├── .env              # Environment-specific configuration
-├── requirements.txt  # Dependency specifications
-└── README.md         # System documentation
+├── app/                # Backend: FastAPI logic
+├── frontend/           # Frontend: Next.js + React UI
+│   ├── src/app/        # App router logic
+│   └── Dockerfile      # Frontend containerization
+├── data/               # Persistent storage for raw source documents
+├── storage/            # Local Qdrant database storage
+├── benchmark_models.py # Automated model benchmarking & scoring
+├── cli_compare.py      # Interactive side-by-side model comparison
+├── evaluate_pipeline.py# RAGAS-based pipeline evaluation
+├── ingest.py           # Document ingestion entrypoint
+├── .env                # Environment-specific configuration
+├── requirements.txt    # Backend dependency specifications
+├── Dockerfile          # Backend containerization
+├── docker-compose.yml  # Full-stack orchestration
+└── README.md           # System documentation
 ```
 
 ## Setup and Installation
 
-### 1. Environment Initialization
-Initialize a isolated Python environment to manage dependencies:
+### Option 1: Docker (Recommended)
+The entire stack (Backend + Frontend) is containerized for easy deployment.
 
-```bash
-python -m venv venv
-# Windows
-.\venv\Scripts\activate
-# Linux/macOS
-source venv/bin/activate
-```
+1. **Configure Environment**: Ensure your `.env` file contains your `GROQ_API_KEY`.
+2. **Launch Stack**:
+   ```bash
+   docker-compose up --build -d
+   ```
+3. **Access the App**:
+   - **Frontend UI**: [http://localhost:3000](http://localhost:3000)
+   - **Backend API**: [http://localhost:8000](http://localhost:8000)
+   - **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-### 2. Dependency Management
-Install the required production and inference libraries:
+### Option 2: Local Development
+If you prefer running without Docker:
 
-```bash
-pip install -r requirements.txt
-```
+1. **Backend Initialization**:
+   ```bash
+   python -m venv venv
+   .\venv\Scripts\activate  # Windows
+   pip install -r requirements.txt
+   python -m app.main
+   ```
 
-### 3. Configuration
-Configure the `.env` file with appropriate API keys and model identifiers. The system is designed to be model-agnostic at the generation layer.
+2. **Frontend Initialization**:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
 
 ## Detailed Pipeline Walkthrough
 
