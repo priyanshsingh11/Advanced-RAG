@@ -32,37 +32,11 @@ The project follows an **Advanced RAG (Multi-Stage)** pipeline designed for maxi
 4.  **Refinement (Reranking)**: A **Cross-Encoder Reranker** (`BAAI/bge-reranker-base`) re-scores the candidates to ensure high-precision grounding.
 5.  **Generation**: The top refined results are expanded to their **Parent Context** and passed to the LLM for a hallucination-free, cited response.
 
-## Technical Components
-
-- **FastAPI**: Asynchronous Python framework with **Lifespan Management** for efficient resource handling.
-- **Qdrant**: Vector search engine supporting hybrid search, persistence, and complex metadata filtering.
-- **FastEmbed**: High-speed inference for BGE and BM25 embeddings.
-- **Ollama**: Powering local Query Analysis, HyDE generation, and final answer synthesis.
-
-## Project Structure
-
-```text
-├── app/                # Backend: FastAPI logic
-├── frontend/           # Frontend: Next.js + React UI
-│   ├── src/app/        # App router logic
-│   └── Dockerfile      # Frontend containerization
-├── data/               # Persistent storage for raw source documents
-├── storage/            # Local Qdrant database storage
-├── benchmark_models.py # Automated model benchmarking & scoring
-├── cli_compare.py      # Interactive side-by-side model comparison
-├── evaluate_pipeline.py# RAGAS-based pipeline evaluation
-├── ingest.py           # Document ingestion entrypoint
-├── .env                # Environment-specific configuration
-├── requirements.txt    # Backend dependency specifications
-├── Dockerfile          # Backend containerization
-├── docker-compose.yml  # Full-stack orchestration
-└── README.md           # System documentation
 ```
 
-## Setup and Installation
+## 🚀 Quick Start (Docker)
 
-### Option 1: Docker (Recommended)
-The entire stack (Backend + Frontend) is containerized for easy deployment.
+The fastest way to get the entire project (Backend + Frontend) running:
 
 1. **Configure Environment**: Ensure your `.env` file contains your `GROQ_API_KEY`.
 2. **Launch Stack**:
@@ -72,7 +46,13 @@ The entire stack (Backend + Frontend) is containerized for easy deployment.
 3. **Access the App**:
    - **Frontend UI**: [http://localhost:3000](http://localhost:3000)
    - **Backend API**: [http://localhost:8000](http://localhost:8000)
-   - **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+---
+
+## Setup and Installation
+
+### Option 2: Local Development
+If you prefer running without Docker:
 
 ### Option 2: Local Development
 If you prefer running without Docker:
