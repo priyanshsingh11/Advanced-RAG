@@ -421,3 +421,19 @@ body {
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
+.message.system {
+  align-items: center;
+  margin: 16px 0;
+}
+
+.message.system .message-bubble {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  color: #aaa;
+  font-size: 13px;
+  padding: 8px 24px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
