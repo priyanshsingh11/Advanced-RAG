@@ -12,10 +12,10 @@ import math
 
 class Generator:
     def __init__(self):
-        # Default LLM (compatible with existing code)
-        self.default_llm = ChatOllama(
-            model=settings.OLLAMA_MODEL,
-            base_url=settings.OLLAMA_BASE_URL,
+        # Default LLM (Switched to Groq for speed)
+        self.default_llm = ChatGroq(
+            model=settings.GROQ_MODEL,
+            groq_api_key=settings.GROQ_API_KEY,
             temperature=0.1
         )
         

@@ -1,4 +1,4 @@
-from langchain_ollama import ChatOllama
+from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from app.core.config import settings
 import logging
@@ -8,12 +8,11 @@ logger = logging.getLogger(__name__)
 
 class QueryRewriter:
     def __init__(self):
-        # Initializing the local Ollama model
-        self.llm = ChatOllama(
-            model=settings.OLLAMA_MODEL,
-            base_url=settings.OLLAMA_BASE_URL,
-            temperature=0,
-            format="json" # Ensure Ollama outputs valid JSON
+        # Initializing the Groq model for fast query analysis
+        self.llm = ChatGroq(
+            model=settings.GROQ_MODEL,
+            groq_api_key=settings.GROQ_API_KEY,
+            temperature=0
         )
         
         self.prompt = ChatPromptTemplate.from_messages([
