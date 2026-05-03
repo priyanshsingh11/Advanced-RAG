@@ -12,11 +12,12 @@ import math
 
 class Generator:
     def __init__(self):
-        # Default LLM (Switched to Groq for speed)
+        # Default LLM (Tuned for high consistency and confidence)
         self.default_llm = ChatGroq(
             model=settings.GROQ_MODEL,
             groq_api_key=settings.GROQ_API_KEY,
-            temperature=0.1
+            temperature=0.2,
+            model_kwargs={"top_p": 0.9}
         )
         
         self.prompt = ChatPromptTemplate.from_messages([
