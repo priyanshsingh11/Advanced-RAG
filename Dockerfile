@@ -10,6 +10,8 @@ RUN apt-get update && apt-get install -y \
     curl \
     gfortran \
     libopenblas-dev \
+    pkg-config \
+    cmake \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the requirements file first to leverage Docker cache
