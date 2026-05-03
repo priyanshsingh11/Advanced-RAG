@@ -36,8 +36,8 @@ class Settings(BaseSettings):
     CHUNKING_SIZE: int = 500
     CHUNKING_OVERLAP: int = 100
     USE_SEMANTIC_CHUNKING: bool = True
-    TOP_K_RETRIEVAL: int = 15
-    TOP_K_RERANK: int = 10
+    TOP_K_RETRIEVAL: int = 40
+    TOP_K_RERANK: int = 5
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
