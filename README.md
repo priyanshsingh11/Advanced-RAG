@@ -15,10 +15,7 @@ The application features a premium, pixel-styled dark-mode interface designed fo
 ![Comparative Analysis - Bagging vs Boosting](docs/images/demo_chat_2.png)
 *High-precision retrieval and side-by-side concept explanation.*
 
-### ✨ Recent Updates: Smart Highlighting
-The UI now features **System-Level Notifications** for document indexing. When you upload a new document, the system provides a distinctive, highlighted confirmation bubble with a file icon, ensuring you know exactly when your knowledge base has been updated.
-
-## 🚀 Quick Start (Docker)
+## Quick Start (Docker)
 
 The fastest way to get the entire project (Backend + Frontend) running:
 
@@ -57,21 +54,32 @@ The project follows an **Advanced RAG (Multi-Stage)** pipeline designed for maxi
 ## Project Structure
 
 ```text
-├── app/                # Backend: FastAPI logic
-├── frontend/           # Frontend: Next.js + React UI
-│   ├── src/app/        # App router logic
-│   └── Dockerfile      # Frontend containerization
-├── data/               # Persistent storage for raw source documents
-├── storage/            # Local Qdrant database storage
-├── benchmark_models.py # Automated model benchmarking & scoring
-├── cli_compare.py      # Interactive side-by-side model comparison
-├── evaluate_pipeline.py# RAGAS-based pipeline evaluation
-├── ingest.py           # Document ingestion entrypoint
-├── .env                # Environment-specific configuration
-├── requirements.txt    # Backend dependency specifications
-├── Dockerfile          # Backend containerization
-├── docker-compose.yml  # Full-stack orchestration
-└── README.md           # System documentation
+Advanced RAG/
+├── app/                        # Backend: FastAPI Application
+│   ├── api/                    # API route definitions and endpoints
+│   ├── core/                   # Global configuration and settings
+│   ├── db/                     # Database connection (Qdrant)
+│   ├── schemas/                # Pydantic models for request/response
+│   ├── services/               # Core RAG logic (Retrieval, Reranking, Orchestration)
+│   ├── utils/                  # Helper functions and utilities
+│   └── main.py                 # FastAPI entry point
+├── frontend/                   # Frontend: Next.js Application
+│   ├── src/
+│   │   ├── app/                # Next.js App Router (pages and layouts)
+│   │   │   ├── globals.css     # Global styles and design system
+│   │   │   └── page.tsx        # Main Chat UI component
+│   └── Dockerfile              # Frontend containerization
+├── data/                       # Local directory for raw source documents (PDF/TXT)
+├── storage/                    # Persistent storage for local Qdrant database
+├── benchmark_models.py         # Automated model benchmarking suite
+├── cli_compare.py              # Interactive CLI for model comparison
+├── evaluate_pipeline.py        # RAGAS evaluation scripts
+├── ingest.py                   # Script for batch document ingestion
+├── .env                        # Environment variables (API Keys, config)
+├── requirements.txt            # Backend Python dependencies
+├── Dockerfile                  # Backend containerization
+├── docker-compose.yml          # Full-stack Docker orchestration
+└── README.md                   # Project documentation
 ```
 
 ## Setup and Installation
