@@ -25,3 +25,4 @@ pdfminer.six
 pillow
 pytesseract
 langchain-experimental
+scikit-learn
