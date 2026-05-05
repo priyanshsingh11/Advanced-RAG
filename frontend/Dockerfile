@@ -13,8 +13,10 @@ RUN npm install
 COPY . .
 
 # Build the application
-# Note: Ensure you have NEXT_PUBLIC_API_URL set to your backend URL
-ENV NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+# Use build argument for the API URL so it can be set at build time
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 RUN npm run build
 
 # Final production image

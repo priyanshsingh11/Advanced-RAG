@@ -10,16 +10,18 @@ services:
       - ./storage:/app/storage
     env_file:
       - .env
+    environment:
+      - QDRANT_PATH=/app/storage
     restart: always
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
     ports:
       - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
     depends_on:
       - backend
     restart: always
